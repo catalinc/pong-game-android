@@ -12,7 +12,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.AttributeSet;
-import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -113,8 +112,13 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                if (thread.touchOnPlayerAPaddle(event)) {
-                    moving = true;
+                if (thread.isBetweenRounds()) {
+                    // resume game
+                    thread.setState(PongThread.STATE_RUNNING);
+                } else {
+                    if (thread.touchOnPlayerAPaddle(event)) {
+                        moving = true;
+                    }
                 }
                 return true;
             case MotionEvent.ACTION_MOVE:
@@ -431,6 +435,16 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
         }
 
         /**
+         * @return true if the game is in win, lose or pause state
+         */
+        private boolean isBetweenRounds() {
+            return mMode == STATE_READY
+                    || mMode == STATE_WIN
+                    || mMode == STATE_LOSE
+                    || mMode == STATE_PAUSE;
+        }
+
+        /**
          * Returns true if the touch event is on Player A paddle bounds.
          *
          * @param event touch even
@@ -444,7 +458,7 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
         }
 
         /**
-         * Move Player A paddle according to touch move event.
+         * Move Player A paddle according to touch event.
          *
          * @param event touch move event
          */
@@ -537,6 +551,9 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
             canvas.drawCircle(mBall.cx, mBall.cy, mBallRadius, mBallPaint);
         }
 
+        /**
+         * Reset players and ball position for a new round.
+         */
         private void newRound() {
             mBall.cx = mCanvasWidth / 2;
             mBall.cy = mCanvasHeight / 2;
@@ -576,6 +593,9 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
             }
         }
 
+        /**
+         * Compute ball direction after collision with player paddle.
+         */
         private void processCollision(Player player, Ball ball) {
             float relativeIntersectY = player.top + mPaddleHeight / 2 - ball.cy;
             float normalizedRelativeIntersectY = relativeIntersectY / (mPaddleHeight / 2);
