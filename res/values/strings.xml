@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="mode_ready">Play</string>
+    <string name="mode_ready">Touch to Play</string>
     <string name="mode_pause">Paused</string>
-    <string name="mode_win">You win !</string>
-    <string name="mode_lose">Sorry, you lose...</string>
+    <string name="mode_win">Nice ;)</string>
+    <string name="mode_lose">Sorry :(</string>
     <string name="menu_start">Start</string>
     <string name="menu_stop">Stop</string>
     <string name="menu_pause">Pause</string>
     <string name="menu_resume">Resume</string>
-    <string name="pong_layout_text_text">Play</string>
+    <string name="default_score">0    0</string>
 </resources>

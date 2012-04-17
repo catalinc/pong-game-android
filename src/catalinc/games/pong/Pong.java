@@ -6,8 +6,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
-import static catalinc.games.pong.PongView.PongThread;
-
 /**
  * Pong game.
  */
@@ -20,19 +18,17 @@ public class Pong extends Activity {
 
     private PongThread mPongThread;
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.pong_layout);
 
-        final PongView mPongView = (PongView) findViewById(R.id.pong);
-        mPongView.setTextView((TextView) findViewById(R.id.text));
-        mPongThread = mPongView.getThread();
+        final PongView mPongView = (PongView) findViewById(R.id.main);
+        mPongView.setStatusView((TextView) findViewById(R.id.status));
+        mPongView.setScoreView((TextView) findViewById(R.id.score));
 
+        mPongThread = mPongView.getAnimationThread();
         if (savedInstanceState == null) {
             mPongThread.setState(PongThread.STATE_READY);
         } else {
@@ -40,27 +36,18 @@ public class Pong extends Activity {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void onPause() {
         super.onPause();
         mPongThread.pause();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         mPongThread.saveState(outState);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
@@ -73,9 +60,6 @@ public class Pong extends Activity {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {

@@ -1,18 +1,29 @@
 <merge xmlns:android="http://schemas.android.com/apk/res/android">
 
     <catalinc.games.pong.PongView
-            android:id="@+id/pong"
+            android:id="@+id/main"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"/>
 
     <TextView
-            android:id="@+id/text"
-            android:text="@string/pong_layout_text_text"
+            android:id="@+id/score"
+            android:text="@string/default_score"
             android:visibility="visible"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal|top"
             android:layout_marginTop="20dip"
+            android:textColor="#FF7D27"
+            android:textSize="24sp"/>
+
+    <TextView
+            android:id="@+id/status"
+            android:text="@string/mode_ready"
+            android:visibility="visible"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="25dip"
             android:textColor="#ff8888ff"
             android:textSize="24sp"/>
 
