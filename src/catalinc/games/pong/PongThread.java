@@ -7,6 +7,7 @@ import android.graphics.*;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -31,7 +32,7 @@ class PongThread extends Thread {
      */
     private static final int PHYS_BALL_SPEED = 8;
     private static final int PHYS_PADDLE_SPEED = 12;
-    private static final int PHYS_FPS_INIT = 30;
+    private static final int PHYS_FPS_INIT = 35;
     private static final double PHYS_MAX_BOUNCE_ANGLE = 5 * Math.PI / 12; // 75 degrees in radians
 
     /*
@@ -115,7 +116,6 @@ class PongThread extends Thread {
         int paddleHeight = a.getInt(R.styleable.PongView_paddleHeight, 85);
         int paddleWidth = a.getInt(R.styleable.PongView_paddleWidth, 25);
         int ballRadius = a.getInt(R.styleable.PongView_ballRadius, 15);
-        float scoreTextSize = a.getFloat(R.styleable.PongView_scoreTextSize, 26);
 
         a.recycle();
 
@@ -202,7 +202,7 @@ class PongThread extends Thread {
      */
     @Override
     public void run() {
-        long nextGameTick = System.currentTimeMillis();
+        long nextGameTick = SystemClock.uptimeMillis();
         while (mRun) {
             Canvas c = null;
             final long skipTicks = 1000 / mFramesPerSecond;
@@ -220,13 +220,9 @@ class PongThread extends Thread {
                 }
             }
             nextGameTick += skipTicks;
-            final long sleepTime = nextGameTick - System.currentTimeMillis();
+            final long sleepTime = nextGameTick - SystemClock.uptimeMillis();
             if (sleepTime > 0) {
-                try {
-                    Thread.sleep(sleepTime);
-                } catch (InterruptedException e) {
-                    // don't care
-                }
+                SystemClock.sleep(sleepTime);
             }
         }
     }

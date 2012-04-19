@@ -4,7 +4,6 @@
         <attr name="paddleHeight" format="integer"/>
         <attr name="paddleWidth" format="integer"/>
         <attr name="ballRadius" format="integer"/>
-        <attr name="scoreTextSize" format="float"/>
     </declare-styleable>
 </resources>
 
