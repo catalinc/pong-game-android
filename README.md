@@ -7,4 +7,4 @@ The game is not quite finished yet, there is some work that I'm planning to do:
 
 Here is a screenshot taken from game running on Android Emulator:
 
-![pong](https://github.com/catalinc/android-pong/master/raw/pong.png)
+![pong](https://github.com/catalinc/android-pong/blob/master/pong.png)
