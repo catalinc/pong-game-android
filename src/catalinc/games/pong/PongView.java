@@ -111,14 +111,14 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
                     // resume game
                     animationThread.setState(PongThread.STATE_RUNNING);
                 } else {
-                    if (animationThread.isTouchOnHumanPlayerPaddle(event)) {
+                    if (animationThread.isTouchOnHumanPaddle(event)) {
                         moving = true;
                     }
                 }
                 return true;
             case MotionEvent.ACTION_MOVE:
                 if (moving) {
-                    animationThread.moveHumanPlayerPaddle(event);
+                    animationThread.handleMoveHumanPaddleEvent(event);
                 }
                 return true;
             case MotionEvent.ACTION_UP:

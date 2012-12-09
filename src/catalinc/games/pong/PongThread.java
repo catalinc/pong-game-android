@@ -3,7 +3,10 @@ package catalinc.games.pong;
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
-import android.graphics.*;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.DashPathEffect;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -12,6 +15,8 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
+
+import java.util.Random;
 
 /**
  * Handle animation, game logic and user input.
@@ -32,7 +37,8 @@ class PongThread extends Thread {
      */
     private static final int PHYS_BALL_SPEED = 8;
     private static final int PHYS_PADDLE_SPEED = 12;
-    private static final int PHYS_FPS_INIT = 35;
+    private static final int PHYS_FPS_INIT = 40;
+    private static final int PHYS_MAX_FRAME_SKIP = 5;
     private static final double PHYS_MAX_BOUNCE_ANGLE = 5 * Math.PI / 12; // 75 degrees in radians
 
     /*
@@ -100,6 +106,16 @@ class PongThread extends Thread {
      */
     private int mCanvasWidth = 1;
 
+    /**
+     * Used to make computer "forget" to move the paddle in order to behave more like a human opponent.
+     */
+    private Random mRandomGen;
+
+    /**
+     * The probability to move computer paddle.
+     */
+    private float mComputerMoveProbability;
+
 
     PongThread(final SurfaceHolder surfaceHolder,
                final Context context,
@@ -139,13 +155,16 @@ class PongThread extends Thread {
 
         mMedianLinePaint = new Paint();
         mMedianLinePaint.setAntiAlias(true);
-        mMedianLinePaint.setColor(Color.WHITE);
+        mMedianLinePaint.setColor(Color.YELLOW);
         mMedianLinePaint.setAlpha(80);
         mMedianLinePaint.setStyle(Paint.Style.FILL_AND_STROKE);
-        mMedianLinePaint.setStrokeWidth(5.0f);
+        mMedianLinePaint.setStrokeWidth(2.0f);
         mMedianLinePaint.setPathEffect(new DashPathEffect(new float[]{5, 5}, 0));
 
         mFramesPerSecond = PHYS_FPS_INIT;
+
+        mRandomGen = new Random();
+        mComputerMoveProbability = 0.6f;
     }
 
     /**
@@ -153,7 +172,7 @@ class PongThread extends Thread {
      *
      * @param map bundle to save game state
      */
-    public void saveState(Bundle map) {
+    void saveState(Bundle map) {
         synchronized (mSurfaceHolder) {
             map.putFloatArray(KEY_HUMAN_PLAYER_DATA,
                     new float[]{mHumanPlayer.bounds.left,
@@ -177,7 +196,7 @@ class PongThread extends Thread {
      *
      * @param map bundle containing the game state
      */
-    public void restoreState(Bundle map) {
+    void restoreState(Bundle map) {
         synchronized (mSurfaceHolder) {
             float[] humanPlayerData = map.getFloatArray(KEY_HUMAN_PLAYER_DATA);
             mHumanPlayer.score = (int) humanPlayerData[2];
@@ -203,26 +222,28 @@ class PongThread extends Thread {
     @Override
     public void run() {
         long nextGameTick = SystemClock.uptimeMillis();
+        long skipTicks = 1000 / mFramesPerSecond;
         while (mRun) {
+            int loops = 0;
             Canvas c = null;
-            final long skipTicks = 1000 / mFramesPerSecond;
             try {
                 c = mSurfaceHolder.lockCanvas(null);
-                synchronized (mSurfaceHolder) {
-                    if (mState == STATE_RUNNING) {
-                        updatePhysics();
+                if (c != null) {
+                    synchronized (mSurfaceHolder) {
+                        if (mState == STATE_RUNNING) {
+                            while (SystemClock.uptimeMillis() > nextGameTick && loops < PHYS_MAX_FRAME_SKIP) {
+                                updatePhysics();
+                                nextGameTick += skipTicks;
+                                loops++;
+                            }
+                        }
+                        updateDisplay(c);
                     }
-                    updateDisplay(c);
                 }
             } finally {
                 if (c != null) {
                     mSurfaceHolder.unlockCanvasAndPost(c);
                 }
-            }
-            nextGameTick += skipTicks;
-            final long sleepTime = nextGameTick - SystemClock.uptimeMillis();
-            if (sleepTime > 0) {
-                SystemClock.sleep(sleepTime);
             }
         }
     }
@@ -232,7 +253,7 @@ class PongThread extends Thread {
      *
      * @param running true to run, false to shut down
      */
-    public void setRunning(boolean running) {
+    void setRunning(boolean running) {
         mRun = running;
     }
 
@@ -241,7 +262,7 @@ class PongThread extends Thread {
      *
      * @param mode one of the state constants
      */
-    public void setState(int mode) {
+    void setState(int mode) {
         synchronized (mSurfaceHolder) {
             mState = mode;
             Resources res = mContext.getResources();
@@ -275,11 +296,10 @@ class PongThread extends Thread {
      * @param width  canvas width
      * @param height canvas height
      */
-    public void setSurfaceSize(int width, int height) {
+    void setSurfaceSize(int width, int height) {
         synchronized (mSurfaceHolder) {
             mCanvasWidth = width;
             mCanvasHeight = height;
-
             prepareNewRound();
         }
     }
@@ -287,7 +307,7 @@ class PongThread extends Thread {
     /**
      * Start the game.
      */
-    public void doStart() {
+    void doStart() {
         synchronized (mSurfaceHolder) {
             setState(STATE_RUNNING);
         }
@@ -296,7 +316,7 @@ class PongThread extends Thread {
     /**
      * Pauses the animation.
      */
-    public void pause() {
+    void pause() {
         synchronized (mSurfaceHolder) {
             if (mState == STATE_RUNNING) {
                 setState(STATE_PAUSE);
@@ -307,7 +327,7 @@ class PongThread extends Thread {
     /**
      * Resumes from a pause.
      */
-    public void unPause() {
+    void unPause() {
         synchronized (mSurfaceHolder) {
             setState(STATE_RUNNING);
         }
@@ -329,7 +349,7 @@ class PongThread extends Thread {
      * @param event touch even
      * @return true if touch is on Player A paddle
      */
-    boolean isTouchOnHumanPlayerPaddle(MotionEvent event) {
+    boolean isTouchOnHumanPaddle(MotionEvent event) {
         return mHumanPlayer.bounds.contains(event.getX(), event.getY());
     }
 
@@ -338,7 +358,7 @@ class PongThread extends Thread {
      *
      * @param event touch move event
      */
-    void moveHumanPlayerPaddle(MotionEvent event) {
+    void handleMoveHumanPaddleEvent(MotionEvent event) {
         synchronized (mSurfaceHolder) {
             movePlayer(mHumanPlayer,
                     mHumanPlayer.bounds.left,
@@ -367,7 +387,9 @@ class PongThread extends Thread {
             return;
         }
 
-        doAI();
+        if (mRandomGen.nextFloat() < mComputerMoveProbability) {
+            doAI();
+        }
 
         moveBall();
     }
