@@ -221,8 +221,7 @@ class PongThread extends Thread {
      */
     @Override
     public void run() {
-        long nextGameTick = SystemClock.uptimeMillis();
-        long skipTicks = 1000 / mFramesPerSecond;
+        long mNextGameTick = SystemClock.uptimeMillis();
         while (mRun) {
             int loops = 0;
             Canvas c = null;
@@ -231,11 +230,13 @@ class PongThread extends Thread {
                 if (c != null) {
                     synchronized (mSurfaceHolder) {
                         if (mState == STATE_RUNNING) {
-                            while (SystemClock.uptimeMillis() > nextGameTick && loops < PHYS_MAX_FRAME_SKIP) {
+                            while (SystemClock.uptimeMillis() > mNextGameTick && loops < PHYS_MAX_FRAME_SKIP) {
                                 updatePhysics();
-                                nextGameTick += skipTicks;
+                                mNextGameTick += 1000 / mFramesPerSecond;
                                 loops++;
                             }
+                        } else {
+                            mNextGameTick = SystemClock.uptimeMillis();
                         }
                         updateDisplay(c);
                     }

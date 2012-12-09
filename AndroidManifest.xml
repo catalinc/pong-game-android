@@ -5,7 +5,7 @@
                  android:icon="@drawable/icon">
         <activity android:name="catalinc.games.pong.Pong"
                   android:theme="@android:style/Theme.NoTitleBar"
-                  android:screenOrientation="portrait"
+                  android:screenOrientation="landscape"
                   android:configChanges="keyboardHidden|orientation">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
