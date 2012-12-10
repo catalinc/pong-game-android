@@ -97,6 +97,11 @@ class PongThread extends Thread {
     private Paint mMedianLinePaint;
 
     /**
+     * Canvas bounds paint.
+     */
+    private Paint mCanvasBoundsPaint;
+
+    /**
      * Current height of the canvas.
      */
     private int mCanvasHeight = 1;
@@ -160,6 +165,12 @@ class PongThread extends Thread {
         mMedianLinePaint.setStyle(Paint.Style.FILL_AND_STROKE);
         mMedianLinePaint.setStrokeWidth(2.0f);
         mMedianLinePaint.setPathEffect(new DashPathEffect(new float[]{5, 5}, 0));
+
+        mCanvasBoundsPaint = new Paint();
+        mCanvasBoundsPaint.setAntiAlias(true);
+        mCanvasBoundsPaint.setColor(Color.YELLOW);
+        mCanvasBoundsPaint.setStyle(Paint.Style.STROKE);
+        mCanvasBoundsPaint.setStrokeWidth(1.0f);
 
         mFramesPerSecond = PHYS_FPS_INIT;
 
@@ -438,6 +449,7 @@ class PongThread extends Thread {
      */
     private void updateDisplay(Canvas canvas) {
         canvas.drawColor(Color.BLACK);
+        canvas.drawRect(0, 0, mCanvasWidth, mCanvasHeight, mCanvasBoundsPaint);
 
         final int middle = mCanvasWidth / 2;
         canvas.drawLine(middle, 1, middle, mCanvasHeight - 1, mMedianLinePaint);
