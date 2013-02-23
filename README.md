@@ -5,6 +5,6 @@ The game is not quite finished yet, there is some work that I'm planning to do:
 - Adaptive AI (difficulty levels)
 - Better, more fluid animation (replace Canvas drawing with OpenGL maybe ?)
 
-Here is a screenshot taken from game running on Android Emulator:
+Here is a screen shot taken from game running on Android Emulator:
 
-![pong](https://github.com/catalinc/android-pong/raw/master/pong.png)
+![pong](https://github.com/catalinc/pong-android/raw/master/pong.png)
