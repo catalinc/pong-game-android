@@ -15,9 +15,9 @@ import android.widget.TextView;
 public class PongView extends SurfaceView implements SurfaceHolder.Callback {
 
     /**
-     * The animationThread that actually draws the animation and handles user input.
+     * The game thread that actually draws the animation and handles user input.
      */
-    private PongThread animationThread;
+    private PongThread mGameThread;
 
     /**
      * Text view to display game status (Win, Lose, Paused etc.).
@@ -29,13 +29,13 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
      */
     private TextView mScoreView;
 
-    public PongView(Context context, AttributeSet attrs) {
-        super(context, attrs);
+    public PongView(Context context, AttributeSet attributeSet) {
+        super(context, attributeSet);
 
         SurfaceHolder holder = getHolder();
         holder.addCallback(this);
 
-        animationThread = new PongThread(holder, context,
+        mGameThread = new PongThread(holder, context,
                 new Handler() {
                     @Override
                     public void handleMessage(Message m) {
@@ -49,7 +49,7 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
                         mScoreView.setText(m.getData().getString("text"));
                     }
                 },
-                attrs
+                attributeSet
         );
 
         setFocusable(true);
@@ -72,28 +72,28 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void onWindowFocusChanged(boolean hasWindowFocus) {
         if (!hasWindowFocus) {
-            animationThread.pause();
+            mGameThread.pause();
         }
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        animationThread.setSurfaceSize(width, height);
+        mGameThread.setSurfaceSize(width, height);
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        animationThread.setRunning(true);
-        animationThread.start();
+        mGameThread.setRunning(true);
+        mGameThread.start();
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         boolean retry = true;
-        animationThread.setRunning(false);
+        mGameThread.setRunning(false);
         while (retry) {
             try {
-                animationThread.join();
+                mGameThread.join();
                 retry = false;
             } catch (InterruptedException e) {
                 // don't care
@@ -107,18 +107,18 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                if (animationThread.isBetweenRounds()) {
+                if (mGameThread.isBetweenRounds()) {
                     // resume game
-                    animationThread.setState(PongThread.STATE_RUNNING);
+                    mGameThread.setState(PongThread.STATE_RUNNING);
                 } else {
-                    if (animationThread.isTouchOnHumanPaddle(event)) {
+                    if (mGameThread.isTouchOnHumanPaddle(event)) {
                         moving = true;
                     }
                 }
                 return true;
             case MotionEvent.ACTION_MOVE:
                 if (moving) {
-                    animationThread.handleMoveHumanPaddleEvent(event);
+                    mGameThread.handleMoveHumanPaddleEvent(event);
                 }
                 return true;
             case MotionEvent.ACTION_UP:
@@ -128,11 +128,8 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    /**
-     * @return animation animationThread
-     */
-    public PongThread getAnimationThread() {
-        return animationThread;
+    public PongThread getGameThread() {
+        return mGameThread;
     }
 
 }

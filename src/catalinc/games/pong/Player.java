@@ -10,6 +10,7 @@ class Player {
     Paint paint;
     int score;
     RectF bounds;
+    boolean isHit;
 
     Player(int paddleWidth, int paddleHeight, Paint paint) {
         this.paddleWidth = paddleWidth;
@@ -17,6 +18,7 @@ class Player {
         this.paint = paint;
         this.score = 0;
         this.bounds = new RectF(0, 0, paddleWidth, paddleHeight);
+        this.isHit = false;
     }
 
 }

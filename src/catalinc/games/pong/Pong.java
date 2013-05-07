@@ -7,16 +7,15 @@ import android.view.MenuItem;
 import android.widget.TextView;
 
 /**
- * Pong game.
+ * Main activity of Pong game.
  */
 public class Pong extends Activity {
 
-    private static final int MENU_PAUSE = 1;
+    private static final int MENU_NEW_GAME = 1;
     private static final int MENU_RESUME = 2;
-    private static final int MENU_START = 3;
-    private static final int MENU_STOP = 4;
+    private static final int MENU_EXIT = 3;
 
-    private PongThread mPongThread;
+    private PongThread mGameThread;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -28,34 +27,33 @@ public class Pong extends Activity {
         mPongView.setStatusView((TextView) findViewById(R.id.status));
         mPongView.setScoreView((TextView) findViewById(R.id.score));
 
-        mPongThread = mPongView.getAnimationThread();
+        mGameThread = mPongView.getGameThread();
         if (savedInstanceState == null) {
-            mPongThread.setState(PongThread.STATE_READY);
+            mGameThread.setState(PongThread.STATE_READY);
         } else {
-            mPongThread.restoreState(savedInstanceState);
+            mGameThread.restoreState(savedInstanceState);
         }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        mPongThread.pause();
+        mGameThread.pause();
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        mPongThread.saveState(outState);
+        mGameThread.saveState(outState);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
 
-        menu.add(0, MENU_START, 0, R.string.menu_start);
-        menu.add(0, MENU_STOP, 0, R.string.menu_stop);
-        menu.add(0, MENU_PAUSE, 0, R.string.menu_pause);
+        menu.add(0, MENU_NEW_GAME, 0, R.string.menu_new_game);
         menu.add(0, MENU_RESUME, 0, R.string.menu_resume);
+        menu.add(0, MENU_EXIT, 0, R.string.menu_exit);
 
         return true;
     }
@@ -63,17 +61,14 @@ public class Pong extends Activity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case MENU_START:
-                mPongThread.doStart();
+            case MENU_NEW_GAME:
+                mGameThread.startNewGame();
                 return true;
-            case MENU_STOP:
-                mPongThread.setState(PongThread.STATE_LOSE);
-                return true;
-            case MENU_PAUSE:
-                mPongThread.pause();
+            case MENU_EXIT:
+                finish();
                 return true;
             case MENU_RESUME:
-                mPongThread.unPause();
+                mGameThread.unPause();
                 return true;
         }
         return false;
