@@ -40,6 +40,7 @@ public class PongThread extends Thread {
     private static final int PHYS_PADDLE_SPEED = 12;
     private static final int PHYS_FPS = 60;
     private static final double PHYS_MAX_BOUNCE_ANGLE = 5 * Math.PI / 12; // 75 degrees in radians
+    private static final int PHYS_COLLISION_FRAMES = 5;
 
     /*
     * Constants used when game state is saved/restored
@@ -376,15 +377,19 @@ public class PongThread extends Thread {
      */
     private void updatePhysics() {
 
-        mHumanPlayer.isHit = false;
-        mComputerPlayer.isHit = false;
+        if (mHumanPlayer.collision > 0) {
+            mHumanPlayer.collision--;
+        }
+        if(mComputerPlayer.collision > 0) {
+            mComputerPlayer.collision--;
+        }
 
         if (collision(mHumanPlayer, mBall)) {
             handleCollision(mHumanPlayer, mBall);
-            mHumanPlayer.isHit = true;
+            mHumanPlayer.collision = PHYS_COLLISION_FRAMES;
         } else if (collision(mComputerPlayer, mBall)) {
             handleCollision(mComputerPlayer, mBall);
-            mComputerPlayer.isHit = true;
+            mComputerPlayer.collision = PHYS_COLLISION_FRAMES;
         } else if (ballCollidedWithTopOrBottomWall()) {
             mBall.dy = -mBall.dy;
         } else if (ballCollidedWithRightWall()) {
@@ -464,7 +469,7 @@ public class PongThread extends Thread {
     }
 
     private void handleHit(Player player) {
-        if (player.isHit) {
+        if (player.collision > 0) {
            player.paint.setShadowLayer(10, 0, 0, Color.YELLOW);
         } else {
             player.paint.setShadowLayer(0, 0, 0, 0);
