@@ -24,89 +24,47 @@ import java.util.Random;
  */
 public class PongThread extends Thread {
 
-    /*
-     * State related constants
-     */
-    public static final int STATE_PAUSE = 0;
-    public static final int STATE_READY = 1;
+    public static final int STATE_PAUSE   = 0;
+    public static final int STATE_READY   = 1;
     public static final int STATE_RUNNING = 2;
-    public static final int STATE_LOSE = 3;
-    public static final int STATE_WIN = 4;
+    public static final int STATE_LOSE    = 3;
+    public static final int STATE_WIN     = 4;
 
-    /*
-     * Physics constants
-     */
-    private static final int PHYS_BALL_SPEED = 8;
-    private static final int PHYS_PADDLE_SPEED = 12;
-    private static final int PHYS_FPS = 60;
+    private static final int    PHYS_BALL_SPEED       = 8;
+    private static final int    PHYS_PADDLE_SPEED     = 8;
+    private static final int    PHYS_FPS              = 60;
     private static final double PHYS_MAX_BOUNCE_ANGLE = 5 * Math.PI / 12; // 75 degrees in radians
-    private static final int PHYS_COLLISION_FRAMES = 5;
+    private static final int    PHYS_COLLISION_FRAMES = 5;
 
-    /*
-    * Constants used when game state is saved/restored
-    */
-    private static final String KEY_HUMAN_PLAYER_DATA = "humanPlayer";
+    private static final String KEY_HUMAN_PLAYER_DATA    = "humanPlayer";
     private static final String KEY_COMPUTER_PLAYER_DATA = "computerPlayer";
-    private static final String KEY_BALL_DATA = "ball";
+    private static final String KEY_BALL_DATA            = "ball";
+    private static final String KEY_GAME_STATE           = "state";
 
     private static final String TAG = "PongThread";
 
-    /**
-     * Handle to the surface manager object we interact with
-     */
     private final SurfaceHolder mSurfaceHolder;
 
-    /**
-     * Message handler used by thread to interact with status TextView
-     */
     private final Handler mStatusHandler;
 
-    /**
-     * Message handler used by thread to interact with score TextView
-     */
     private final Handler mScoreHandler;
 
-    /**
-     * Handle to the application context
-     */
     private final Context mContext;
 
-    /**
-     * Indicate whether the surface has been created & is ready to draw
-     */
-    private boolean mRun = false;
+    private       boolean mRun;
+    private final Object  mRunLock;
 
-    /**
-     * The state of the game.
-     */
     private int mState;
 
-    /*
-     * Game objects
-     */
     private Player mHumanPlayer;
     private Player mComputerPlayer;
-    private Ball mBall;
+    private Ball   mBall;
 
-    /**
-     * Median line paint style.
-     */
     private Paint mMedianLinePaint;
 
-    /**
-     * Canvas bounds paint.
-     */
     private Paint mCanvasBoundsPaint;
-
-    /**
-     * Current height of the canvas.
-     */
-    private int mCanvasHeight = 1;
-
-    /**
-     * Current width of the canvas.
-     */
-    private int mCanvasWidth = 1;
+    private int   mCanvasHeight;
+    private int   mCanvasWidth;
 
     /**
      * Used to make computer to "forget" to move the paddle in order to behave more like a human opponent.
@@ -128,6 +86,9 @@ public class PongThread extends Thread {
         mStatusHandler = statusHandler;
         mScoreHandler = scoreHandler;
         mContext = context;
+
+        mRun = false;
+        mRunLock = new Object();
 
         TypedArray a = context.obtainStyledAttributes(attributeSet, R.styleable.PongView);
 
@@ -169,12 +130,15 @@ public class PongThread extends Thread {
         mCanvasBoundsPaint.setStyle(Paint.Style.STROKE);
         mCanvasBoundsPaint.setStrokeWidth(1.0f);
 
+        mCanvasHeight = 1;
+        mCanvasWidth = 1;
+
         mRandomGen = new Random();
         mComputerMoveProbability = 0.6f;
     }
 
     /**
-     * Game loop.
+     * The game loop.
      */
     @Override
     public void run() {
@@ -189,7 +153,11 @@ public class PongThread extends Thread {
                         if (mState == STATE_RUNNING) {
                             updatePhysics();
                         }
-                        updateDisplay(c);
+                        synchronized (mRunLock) {
+                            if (mRun) {
+                                updateDisplay(c);
+                            }
+                        }
                     }
                 }
             } finally {
@@ -209,42 +177,31 @@ public class PongThread extends Thread {
         }
     }
 
-    /**
-     * Used to signal game thread whether it should be running or not.
-     *
-     * @param running true to run, false to shut down
-     */
     void setRunning(boolean running) {
-        mRun = running;
-    }
-
-    /**
-     * Save game state to the provided Bundle.
-     *
-     * @param map bundle to save game state
-     */
-    void saveState(Bundle map) {
-        synchronized (mSurfaceHolder) {
-            map.putFloatArray(KEY_HUMAN_PLAYER_DATA,
-                    new float[]{mHumanPlayer.bounds.left,
-                            mHumanPlayer.bounds.top,
-                            mHumanPlayer.score});
-
-            map.putFloatArray(KEY_COMPUTER_PLAYER_DATA,
-                    new float[]{mComputerPlayer.bounds.left,
-                            mComputerPlayer.bounds.top,
-                            mComputerPlayer.score});
-
-            map.putFloatArray(KEY_BALL_DATA,
-                    new float[]{mBall.cx, mBall.cy, mBall.dx, mBall.dy});
+        synchronized (mRunLock) {
+            mRun = running;
         }
     }
 
-    /**
-     * Restores game state from specified bundle.
-     *
-     * @param map bundle containing the game state
-     */
+    void saveState(Bundle map) {
+        synchronized (mSurfaceHolder) {
+            map.putFloatArray(KEY_HUMAN_PLAYER_DATA,
+                              new float[]{mHumanPlayer.bounds.left,
+                                          mHumanPlayer.bounds.top,
+                                          mHumanPlayer.score});
+
+            map.putFloatArray(KEY_COMPUTER_PLAYER_DATA,
+                              new float[]{mComputerPlayer.bounds.left,
+                                          mComputerPlayer.bounds.top,
+                                          mComputerPlayer.score});
+
+            map.putFloatArray(KEY_BALL_DATA,
+                              new float[]{mBall.cx, mBall.cy, mBall.dx, mBall.dy});
+
+            map.putInt(KEY_GAME_STATE, mState);
+        }
+    }
+
     void restoreState(Bundle map) {
         synchronized (mSurfaceHolder) {
             float[] humanPlayerData = map.getFloatArray(KEY_HUMAN_PLAYER_DATA);
@@ -260,14 +217,12 @@ public class PongThread extends Thread {
             mBall.cy = ballData[1];
             mBall.dx = ballData[2];
             mBall.dy = ballData[3];
+
+            int state = map.getInt(KEY_GAME_STATE);
+            setState(state);
         }
     }
 
-    /**
-     * Sets the game mode.
-     *
-     * @param mode one of the state constants
-     */
     void setState(int mode) {
         synchronized (mSurfaceHolder) {
             mState = mode;
@@ -296,9 +251,6 @@ public class PongThread extends Thread {
         }
     }
 
-    /**
-     * Pauses the animation.
-     */
     void pause() {
         synchronized (mSurfaceHolder) {
             if (mState == STATE_RUNNING) {
@@ -307,9 +259,6 @@ public class PongThread extends Thread {
         }
     }
 
-    /**
-     * Resumes from a pause.
-     */
     void unPause() {
         synchronized (mSurfaceHolder) {
             setState(STATE_RUNNING);
@@ -335,35 +284,18 @@ public class PongThread extends Thread {
         return mState != STATE_RUNNING;
     }
 
-    /**
-     * Returns true if the touch event is on Player A paddle bounds.
-     *
-     * @param event touch even
-     * @return true if touch is on Player A paddle
-     */
     boolean isTouchOnHumanPaddle(MotionEvent event) {
         return mHumanPlayer.bounds.contains(event.getX(), event.getY());
     }
 
-    /**
-     * Move Player A paddle according to touch event.
-     *
-     * @param event touch move event
-     */
-    void handleMoveHumanPaddleEvent(MotionEvent event) {
+    void moveHumanPaddle(float dy) {
         synchronized (mSurfaceHolder) {
             movePlayer(mHumanPlayer,
-                    mHumanPlayer.bounds.left,
-                    event.getY() - mHumanPlayer.paddleHeight / 2);
+                       mHumanPlayer.bounds.left,
+                       mHumanPlayer.bounds.top + dy);
         }
     }
 
-    /**
-     * Callback invoked when the surface dimensions change.
-     *
-     * @param width  canvas width
-     * @param height canvas height
-     */
     void setSurfaceSize(int width, int height) {
         synchronized (mSurfaceHolder) {
             mCanvasWidth = width;
@@ -380,7 +312,7 @@ public class PongThread extends Thread {
         if (mHumanPlayer.collision > 0) {
             mHumanPlayer.collision--;
         }
-        if(mComputerPlayer.collision > 0) {
+        if (mComputerPlayer.collision > 0) {
             mComputerPlayer.collision--;
         }
 
@@ -425,13 +357,13 @@ public class PongThread extends Thread {
         if (mComputerPlayer.bounds.top > mBall.cy) {
             // move up
             movePlayer(mComputerPlayer,
-                    mComputerPlayer.bounds.left,
-                    mComputerPlayer.bounds.top - PHYS_PADDLE_SPEED);
+                       mComputerPlayer.bounds.left,
+                       mComputerPlayer.bounds.top - PHYS_PADDLE_SPEED);
         } else if (mComputerPlayer.bounds.top + mComputerPlayer.paddleHeight < mBall.cy) {
             // move down
             movePlayer(mComputerPlayer,
-                    mComputerPlayer.bounds.left,
-                    mComputerPlayer.bounds.top + PHYS_PADDLE_SPEED);
+                       mComputerPlayer.bounds.left,
+                       mComputerPlayer.bounds.top + PHYS_PADDLE_SPEED);
         }
     }
 
@@ -445,7 +377,7 @@ public class PongThread extends Thread {
 
     private boolean ballCollidedWithTopOrBottomWall() {
         return mBall.cy <= mBall.radius
-                || mBall.cy + mBall.radius >= mCanvasHeight - 1;
+               || mBall.cy + mBall.radius >= mCanvasHeight - 1;
     }
 
     /**
@@ -470,7 +402,7 @@ public class PongThread extends Thread {
 
     private void handleHit(Player player) {
         if (player.collision > 0) {
-           player.paint.setShadowLayer(10, 0, 0, Color.YELLOW);
+            player.paint.setShadowLayer(player.paddleWidth / 2, 0, 0, player.paint.getColor());
         } else {
             player.paint.setShadowLayer(0, 0, 0, 0);
         }
@@ -486,12 +418,12 @@ public class PongThread extends Thread {
         mBall.dy = 0;
 
         movePlayer(mHumanPlayer,
-                2,
-                (mCanvasHeight - mHumanPlayer.paddleHeight) / 2);
+                   2,
+                   (mCanvasHeight - mHumanPlayer.paddleHeight) / 2);
 
         movePlayer(mComputerPlayer,
-                mCanvasWidth - mComputerPlayer.paddleWidth - 2,
-                (mCanvasHeight - mComputerPlayer.paddleHeight) / 2);
+                   mCanvasWidth - mComputerPlayer.paddleWidth - 2,
+                   (mCanvasHeight - mComputerPlayer.paddleHeight) / 2);
     }
 
     private void setStatusText(String text) {

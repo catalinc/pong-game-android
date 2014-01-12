@@ -3,7 +3,7 @@
           package="catalinc.games.pong">
     <application android:label="Pong"
                  android:hardwareAccelerated="true"
-                 android:icon="@drawable/icon">
+                 android:icon="@drawable/ic_launcher">
         <activity android:name="catalinc.games.pong.Pong"
                   android:theme="@android:style/Theme.NoTitleBar"
                   android:screenOrientation="landscape"

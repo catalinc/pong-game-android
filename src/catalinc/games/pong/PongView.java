@@ -14,19 +14,10 @@ import android.widget.TextView;
  */
 public class PongView extends SurfaceView implements SurfaceHolder.Callback {
 
-    /**
-     * The game thread that actually draws the animation and handles user input.
-     */
     private PongThread mGameThread;
 
-    /**
-     * Text view to display game status (Win, Lose, Paused etc.).
-     */
     private TextView mStatusView;
 
-    /**
-     * Text view to display game score.
-     */
     private TextView mScoreView;
 
     public PongView(Context context, AttributeSet attributeSet) {
@@ -55,16 +46,10 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
         setFocusable(true);
     }
 
-    /**
-     * @param textView to be used for status messages
-     */
     public void setStatusView(TextView textView) {
         mStatusView = textView;
     }
 
-    /**
-     * @param textView to be used to display score
-     */
     public void setScoreView(TextView textView) {
         mScoreView = textView;
     }
@@ -102,6 +87,7 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     private boolean moving;
+    private float   mLastTouchY;
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -113,19 +99,24 @@ public class PongView extends SurfaceView implements SurfaceHolder.Callback {
                 } else {
                     if (mGameThread.isTouchOnHumanPaddle(event)) {
                         moving = true;
+                        mLastTouchY = event.getY();
                     }
                 }
-                return true;
+                break;
             case MotionEvent.ACTION_MOVE:
                 if (moving) {
-                    mGameThread.handleMoveHumanPaddleEvent(event);
+                    float y = event.getY();
+                    float dy = y - mLastTouchY;
+                    mLastTouchY = y;
+
+                    mGameThread.moveHumanPaddle(dy);
                 }
-                return true;
+                break;
             case MotionEvent.ACTION_UP:
                 moving = false;
-            default:
-                return true;
+                break;
         }
+        return true;
     }
 
     public PongThread getGameThread() {
